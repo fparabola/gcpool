@@ -7,24 +7,16 @@
 
 #include "common.h"
 
-template<class Tag, class Obj>
-class MemTagger {
-public:
-    void* operator new(size_t);
-    void* operator new(size_t, void*);
-
-private:
-    Tag t;
-};
-
 template<class T>
 struct FixChunk {
-    FixChunk* prev;
+//    FixChunk* prev;
     FixChunk* next;
-    T t;
+    FixChunk* tag;
+    T obj;
 
     FixChunk();
     FixChunk(const FixChunk<T>&) = delete;
+    static size_t offset();
 };
 
 template<class T>
@@ -32,15 +24,14 @@ class FixSizePool {
 
 public:
     FixSizePool(size_t);
+    ~FixSizePool();
     T* allocone();
     T* free(T*);
 
 private:
     FixChunk<T>* freelist;
+    FixChunk<T>* mem;
     size_t nchunk;
-    char* mem;
 };
-void fuck() {
-    int* pi = new int;
-}
+
 #endif //MYPOOL_FIXSIZEPOOL_H

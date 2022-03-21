@@ -30,11 +30,6 @@
 
 using std::size_t;
 
-template<class R, class T>
-R& memasref(T* pt) {
-    return *static_cast<R*>(static_cast<void*>(pt));
-}
-
 template<class D, class S>
 D pointer_cast(S ps) {
     D d = static_cast<D>(static_cast<void*>(ps));
@@ -44,6 +39,12 @@ D pointer_cast(S ps) {
         LOG_PRINT(LOG_DEBUG, "Attempt to cast non-pointer type by pointer_cast");
         throw -1;
     }
+}
+
+template<class R, class T>
+R& memasref(T* pt) {
+//    return *static_cast<R*>(static_cast<void*>(pt));
+    return *pointer_cast<R*>(pt);
 }
 
 #endif //MYPOOL_COMMON_H
