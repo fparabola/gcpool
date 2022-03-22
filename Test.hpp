@@ -5,22 +5,30 @@
 #ifndef MYPOOL_TEST_HPP
 #define MYPOOL_TEST_HPP
 
-#include "common.h"
 #include "Pool.h"
+#include "FixSizePool.hpp"
 
 class Test {
 
 public:
-    void testUpround() {
-        assert(2 == pool.sizeupround(2));
-        assert(8 == pool.sizeupround(8));
-        assert(16 == pool.sizeupround(9));
-        assert(256 == pool.sizeupround(255));
+//    void testUpround() {
+//        assert(2 == pool.sizeupround(2));
+//        assert(8 == pool.sizeupround(8));
+//        assert(16 == pool.sizeupround(9));
+//        assert(256 == pool.sizeupround(255));
+//    }
+
+    void testFixSizePool() {
+        FixSizePool<Test> test(1024);
+    }
+
+    void testAll() {
+//        testUpround();
+        testFixSizePool();
     }
 
 private:
-    Pool pool;
+//    Pool pool;
 };
-
 
 #endif //MYPOOL_TEST_HPP

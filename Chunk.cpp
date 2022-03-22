@@ -4,7 +4,10 @@
 
 #include "Chunk.h"
 
-Chunk::Chunk(): inuse(false), prev(nullptr), next(nullptr), mem(nullptr) {}
+FixSizePool<Chunk> Chunk::fixpool(nchunks);
+
+Chunk::Chunk()
+: inuse(false), prev(nullptr), next(nullptr), mem(nullptr) {}
 
 MemTag& Chunk::taginfo() {
     return *static_cast<MemTag*>(static_cast<void*>(this->mem));
@@ -16,9 +19,16 @@ Chunk* Chunk::findbuddy(Chunk* chunk) {
     return MemTag::astaginfo(mem).chunk;
 }
 
+void *Chunk::operator new(size_t) {
+    return pointer_cast<void*>(fixpool.allocone());
+}
+
+void Chunk::operator delete(void * p) {
+    fixpool.free(pointer_cast<Chunk*>(p));
+}
+
 template<class T>
 MemTag& MemTag::astaginfo(T * p) {
-//    return *static_cast<MemTag*>(static_cast<void*>(p));
     return memasref<MemTag>(p);
 }
 

@@ -2,6 +2,6 @@
 
 int main() {
     Test test;
-//    test.testUpround();
+    test.testAll();
     return 0;
 }

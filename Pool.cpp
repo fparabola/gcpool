@@ -155,6 +155,7 @@ Pool::Pool(): usedarea(nullptr) {
         newchunk->idx = i * MAX_ALLOC;
         MemTag::tag(newchunk);
         if(prev) {
+            LOG_PRINT(LOG_DEBUG, "chunk: [%p], prev: [%p]", newchunk, prev);
             prev->next = newchunk;
             newchunk->prev = prev;
         } else {
@@ -165,15 +166,26 @@ Pool::Pool(): usedarea(nullptr) {
     this->freearea[MAX_ORDER] = head;
 
 #ifdef DEBUG
-    LOG_PRINT(LOG_DEBUG, "Init freelist on freearea[%u]:", MAX_ORDER);
-    auto debugchunk = this->freearea[MAX_ORDER];
-    auto count = 0;
-    while(debugchunk) {
-        LOG_PRINT(LOG_DEBUG, "freelist node(%lu): [addr: %p], [inuse: %d], [idx: %lu], [prev: %p] [next: %p], [mem: %p], [order: %lu]", count, debugchunk, debugchunk->inuse, debugchunk->idx, debugchunk->prev, debugchunk->next, debugchunk->mem, debugchunk->order);
-        debugchunk = debugchunk->next;
-        ++count;
+    LOG_PRINT(LOG_DEBUG, "*********************************************");
+    for(auto i=0; i<N_AREA; ++i) {
+        auto head = this->freearea[i];
+        LOG_PRINT(LOG_DEBUG, "Pool free area[%lu]:", i);
+        auto count = 0;
+        while(head) {
+            LOG_PRINT(LOG_DEBUG, "Node(%lu): [addr: %p], [inuse: %d], [idx: %lu], [prev: %p] [next: %p], [mem: %p], [order: %lu]", ++count, head, head->inuse, head->idx, head->prev, head->next, head->mem, head->order);
+            head = head->next;
+        }
+        LOG_PRINT(LOG_DEBUG, "*********************************************");
     }
-    assert(count == POOL_SIZE / MAX_ALLOC);
+//    LOG_PRINT(LOG_DEBUG, "Init freelist on freearea[%u]:", MAX_ORDER);
+//    auto debugchunk = this->freearea[MAX_ORDER];
+//    auto count = 0;
+//    while(debugchunk) {
+//        LOG_PRINT(LOG_DEBUG, "freelist node(%lu): [addr: %p], [inuse: %d], [idx: %lu], [prev: %p] [next: %p], [mem: %p], [order: %lu]", count, debugchunk, debugchunk->inuse, debugchunk->idx, debugchunk->prev, debugchunk->next, debugchunk->mem, debugchunk->order);
+//        debugchunk = debugchunk->next;
+//        ++count;
+//    }
+//    assert(count == POOL_SIZE / MAX_ALLOC);
 #endif
 }
 
