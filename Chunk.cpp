@@ -7,7 +7,13 @@
 FixSizePool<Chunk> Chunk::fixpool(nchunks);
 
 Chunk::Chunk()
-: inuse(false), prev(nullptr), next(nullptr), mem(nullptr) {}
+: inuse(false), prev(nullptr), next(nullptr), mem(nullptr) {
+    LOG_PRINT(LOG_DEBUG, "Constructor Chunk::Chunk()");
+}
+
+Chunk::~Chunk() {
+    LOG_PRINT(LOG_DEBUG, "Destructor Chunk::~Chunk()");
+}
 
 MemTag& Chunk::taginfo() {
     return *static_cast<MemTag*>(static_cast<void*>(this->mem));

@@ -19,7 +19,7 @@ public:
 //    }
 
     void testFixSizePool() {
-        FixSizePool<Test> test(1024);
+        delete new Chunk;
     }
 
     void testAll() {

@@ -21,6 +21,7 @@ struct Chunk {
     static Chunk* findbuddy(Chunk*);
     MemTag& taginfo();
     Chunk();
+    ~Chunk();
     Chunk(const Chunk&) = delete;
     void* operator new(size_t);
     void operator delete(void*);

@@ -9,6 +9,10 @@
 
 class GC {
 
+private:
+    void* global;
+    void* stack;
+
 };
 
 

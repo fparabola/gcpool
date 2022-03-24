@@ -11,7 +11,7 @@ template<class T>
 struct FixChunk {
     FixChunk* next;
     FixChunk* tag;
-    T obj;
+    char obj[sizeof(T)];
 
     FixChunk();
     FixChunk(const FixChunk<T>&) = delete;
@@ -59,8 +59,8 @@ T *FixSizePool<T>::allocone() {
         } else {
             this->freelist = nullptr;
         }
-        LOG_PRINT(LOG_ERROR, "Fix chunk found: [addr: %p], [objaddr: %p]", current, &current->obj);
-        return &current->obj;
+        LOG_PRINT(LOG_ERROR, "Fix chunk found: [addr: %p], [objaddr: %p]", current, current->obj);
+        return pointer_cast<T*>(current->obj);
     }
     LOG_PRINT(LOG_ERROR, "Allocate fix chunk fail: no free chunk");
     throw -1;
@@ -74,6 +74,7 @@ void FixSizePool<T>::free(T * obj) {
         fixchunk->next = head;
     }
     this->freelist = fixchunk;
+    LOG_PRINT(LOG_DEBUG, "Free one fix chunk: [addr: %p]", fixchunk);
 }
 template<class T>
 FixSizePool<T>::FixSizePool(size_t nchunk): nchunk(nchunk) {
@@ -95,10 +96,10 @@ FixSizePool<T>::FixSizePool(size_t nchunk): nchunk(nchunk) {
     auto current = this->freelist;
     while(current) {
         LOG_PRINT(LOG_DEBUG, "Node(%lu): [addr: %p], [next: %p], [objaddr: %p], [tag: %p], [getchunk: %p]", ++count, current, current->next, &current->obj, current->tag,
-                  FixChunk<T>::getchunk(&current->obj));
+                  FixChunk<T>::getchunk(pointer_cast<T*>(current->obj)));
         if(current->next) {
             assert(pointer_cast<char*>(current) + sizeof(T) <= pointer_cast<char*>(current+1));
-            assert(FixChunk<T>::getchunk(&current->obj) == current);
+            assert(FixChunk<T>::getchunk(pointer_cast<T*>(current->obj)) == current);
         }
         current = current->next;
     }
