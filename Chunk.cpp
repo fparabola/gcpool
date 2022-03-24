@@ -8,11 +8,11 @@ FixSizePool<Chunk> Chunk::fixpool(nchunks);
 
 Chunk::Chunk()
 : inuse(false), prev(nullptr), next(nullptr), mem(nullptr) {
-    LOG_PRINT(LOG_DEBUG, "Constructor Chunk::Chunk()");
+//    LOG_PRINT(LOG_DEBUG, "Constructor Chunk::Chunk()");
 }
 
 Chunk::~Chunk() {
-    LOG_PRINT(LOG_DEBUG, "Destructor Chunk::~Chunk()");
+//    LOG_PRINT(LOG_DEBUG, "Destructor Chunk::~Chunk()");
 }
 
 MemTag& Chunk::taginfo() {
@@ -21,8 +21,10 @@ MemTag& Chunk::taginfo() {
 
 Chunk* Chunk::findbuddy(Chunk* chunk) {
     auto idx = chunk->idx ^ (1 << chunk->order);
-    auto mem = chunk->mem + chunk->idx - idx;
-    return MemTag::astaginfo(mem).chunk;
+    auto mem = chunk->mem + idx - chunk->idx;
+    auto memtag = MemTag::astaginfo(mem);
+    return memtag.chunk;
+//    return MemTag::astaginfo(mem - sizeof(MemTag)).chunk;
 }
 
 void *Chunk::operator new(size_t) {
@@ -33,8 +35,7 @@ void Chunk::operator delete(void * p) {
     fixpool.free(pointer_cast<Chunk*>(p));
 }
 
-template<class T>
-MemTag& MemTag::astaginfo(T * p) {
+MemTag& MemTag::astaginfo(void * p) {
     return memasref<MemTag>(p);
 }
 

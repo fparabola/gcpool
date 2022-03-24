@@ -18,11 +18,9 @@ class Pool {
     friend class Test;
 
 public:
-    template<class T>
-    T* alloc(size_t);
+    void* alloc(size_t);
 
-    template<class T>
-    void free(T*);
+    void free(void*);
 
 public:
     Pool();

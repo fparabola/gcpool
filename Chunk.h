@@ -39,8 +39,7 @@ struct MemTag {
     Chunk* chunk;
 
     static void tag(Chunk*);
-    template<class T>
-    static MemTag& astaginfo(T*);
+    static MemTag& astaginfo(void*);
 };
 
 #endif //MYPOOL_CHUNK_H

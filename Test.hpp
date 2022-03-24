@@ -11,20 +11,20 @@
 class Test {
 
 public:
-//    void testUpround() {
-//        assert(2 == pool.sizeupround(2));
-//        assert(8 == pool.sizeupround(8));
-//        assert(16 == pool.sizeupround(9));
-//        assert(256 == pool.sizeupround(255));
-//    }
 
     void testFixSizePool() {
         delete new Chunk;
     }
 
+    void testPool() {
+        Pool pool;
+        auto mem = pool.alloc(100);
+        pool.free(mem);
+    }
+
     void testAll() {
-//        testUpround();
-        testFixSizePool();
+//        testFixSizePool();
+        testPool();
     }
 
 private:

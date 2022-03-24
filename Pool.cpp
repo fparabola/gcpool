@@ -4,8 +4,7 @@
 
 #include "Pool.h"
 
-template<class T>
-T* Pool::alloc(size_t bytes) {
+void* Pool::alloc(size_t bytes) {
     if(0 == bytes) {
         LOG_PRINT(LOG_ERROR, "Attempt to allocate 0 byte memory");
         throw -1;
@@ -68,6 +67,7 @@ T* Pool::alloc(size_t bytes) {
     }
     assert(chunk);
     LOG_PRINT(LOG_DEBUG, "Found a chunk: [addr: %p], [idx: %lu], [next: %p], [mem: %p], [order: %lu]", chunk, chunk->idx, chunk->next, chunk->mem, chunk->order);
+    assert(MemTag::astaginfo(chunk->mem).chunk == chunk);
     // add to usedarea
     chunk->prev = nullptr;
     if(!this->usedarea) {
@@ -78,19 +78,19 @@ T* Pool::alloc(size_t bytes) {
         usedarea->prev = chunk;
         usedarea = chunk;
     }
-    return static_cast<T*>(chunk->mem + sizeof(MemTag));
+    chunk->inuse = true;
+    return pointer_cast<void*>(chunk->mem + sizeof(MemTag));
 }
 
-template<class T>
-void Pool::free(T* mem) {
-    MemTag memtag = MemTag::astaginfo(mem);
+void Pool::free(void* mem) {
+    MemTag memtag = MemTag::astaginfo(static_cast<char*>(mem) - sizeof(MemTag));
     auto chunk = memtag.chunk;
-    auto buddy = Chunk::findbuddy(chunk);
     if(chunk->inuse) {
-        while(!buddy->inuse) {
+        auto buddy = Chunk::findbuddy(chunk);
+        while(chunk->order < MAX_ORDER && !buddy->inuse) {
             LOG_PRINT(LOG_DEBUG, "About to merge chunk: ");
-            LOG_PRINT(LOG_DEBUG, "chunk1: [order:%lu], [mem:%p], [idx:%lu]", chunk->order, chunk->mem, chunk->idx);
-            LOG_PRINT(LOG_DEBUG, "chunk1: [order:%lu], [mem:%p], [idx:%lu]", buddy->order, buddy->mem, buddy->idx);
+            LOG_PRINT(LOG_DEBUG, "chunk: [order:%lu], [mem:%p], [idx:%lu]", chunk->order, chunk->mem, chunk->idx);
+            LOG_PRINT(LOG_DEBUG, "chunk: [order:%lu], [mem:%p], [idx:%lu]", buddy->order, buddy->mem, buddy->idx);
             // remove buddy from freearea
             auto prev = buddy->prev;
             auto next = buddy->next;
@@ -106,15 +106,18 @@ void Pool::free(T* mem) {
             // merge chunk and buddy
             auto bytes = order2size(chunk->order);
             chunk->order += 1;
-            chunk->mem += bytes;
-            chunk->idx += bytes;
+            chunk->mem = std::min(chunk->mem, buddy->mem);
+            chunk->idx = std::min(chunk->idx, buddy->idx);
             chunk->inuse = false;
             chunk->prev = nullptr;
             chunk->next = nullptr;
             delete buddy;
+            buddy = Chunk::findbuddy(chunk);
             LOG_PRINT(LOG_DEBUG, "merged: [order:%lu], [mem:%p], [idx:%lu]", chunk->order, chunk->mem, chunk->idx);
+            assert((chunk->mem - this->mem) == chunk->idx);
         }
         // add merged chunk to freearea
+        chunk->inuse = false;
         auto insertarea = this->freearea[chunk->order];
         if(insertarea) {
             chunk->next = insertarea;
@@ -161,6 +164,11 @@ Pool::Pool(): usedarea(nullptr) {
         } else {
             head = newchunk;
         }
+#ifdef DEBUG
+        if(i > 0 && i % 2 == 1) {
+            assert(Chunk::findbuddy(newchunk) == prev);
+        }
+#endif
         prev = newchunk;
     }
     this->freearea[MAX_ORDER] = head;
@@ -168,24 +176,16 @@ Pool::Pool(): usedarea(nullptr) {
 #ifdef DEBUG
     LOG_PRINT(LOG_DEBUG, "*********************************************");
     for(auto i=0; i<N_AREA; ++i) {
-        auto head = this->freearea[i];
+        auto current = this->freearea[i];
         LOG_PRINT(LOG_DEBUG, "Pool free area[%lu]:", i);
         auto count = 0;
-        while(head) {
-            LOG_PRINT(LOG_DEBUG, "Node(%lu): [addr: %p], [inuse: %d], [idx: %lu], [prev: %p] [next: %p], [mem: %p], [order: %lu]", ++count, head, head->inuse, head->idx, head->prev, head->next, head->mem, head->order);
-            head = head->next;
+        while(current) {
+            LOG_PRINT(LOG_DEBUG, "Node(%lu): [addr: %p], [inuse: %d], [idx: %lu], [prev: %p] [next: %p], [mem: %p], [order: %lu]", ++count, current, current->inuse, current->idx, current->prev, current->next, current->mem, current->order);
+            assert(MemTag::astaginfo(current->mem).chunk == current);
+            current = current->next;
         }
         LOG_PRINT(LOG_DEBUG, "*********************************************");
     }
-//    LOG_PRINT(LOG_DEBUG, "Init freelist on freearea[%u]:", MAX_ORDER);
-//    auto debugchunk = this->freearea[MAX_ORDER];
-//    auto count = 0;
-//    while(debugchunk) {
-//        LOG_PRINT(LOG_DEBUG, "freelist node(%lu): [addr: %p], [inuse: %d], [idx: %lu], [prev: %p] [next: %p], [mem: %p], [order: %lu]", count, debugchunk, debugchunk->inuse, debugchunk->idx, debugchunk->prev, debugchunk->next, debugchunk->mem, debugchunk->order);
-//        debugchunk = debugchunk->next;
-//        ++count;
-//    }
-//    assert(count == POOL_SIZE / MAX_ALLOC);
 #endif
 }
 
