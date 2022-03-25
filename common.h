@@ -16,9 +16,10 @@
 #define LOG_WARNING 3
 #define LOG_ERROR 4
 
-#define LOGLEVEL LOG_INFO
-
-#define DEBUG
+//#define LOGLEVEL LOG_INFO
+#define LOGLEVEL LOG_ERROR
+//#define DEBUG_ALLOC
+//#define DEBUG
 
 #define LOG_PRINT(level,fmt,...)\
     do {\

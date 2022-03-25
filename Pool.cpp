@@ -12,7 +12,7 @@ void* Pool::alloc(size_t bytes) {
     size_t order = size2order(bytes + sizeof(MemTag));
     size_t scanorder = order;
     auto chunk = this->freearea[scanorder];
-    for(; order <= MAX_ORDER; ++scanorder) {
+    for(; scanorder <= MAX_ORDER; ++scanorder) {
         chunk = this->freearea[scanorder];
         if(chunk) {
             break;
@@ -59,10 +59,10 @@ void* Pool::alloc(size_t bytes) {
         // to allocate this chunk, remove from freearea
         auto head = this->freearea[order];
         if(head->next) {
-            freearea[order] = head->next;
+            this->freearea[order] = head->next;
             head->prev = nullptr;
         } else {
-            freearea[order] = nullptr;
+            this->freearea[order] = nullptr;
         }
     } else {
         LOG_PRINT(LOG_ERROR, "Can not find suitable chunk to allocate");
@@ -84,7 +84,7 @@ void* Pool::alloc(size_t bytes) {
         this->usedarea = chunk;
     }
     chunk->inuse = true;
-#ifdef DEBUG
+#ifdef DEBUG_ALLOC
     for(auto i=0; i<=MAX_ORDER; ++i) {
         auto count = 0;
         auto current = this->freearea[i];

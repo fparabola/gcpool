@@ -29,7 +29,7 @@ struct Chunk {
     void operator delete[](void*) = delete;
 
 private:
-    static const size_t nchunks = 1024;
+    static const size_t nchunks = 1 << 20;
     static FixSizePool<Chunk> fixpool;
 };
 

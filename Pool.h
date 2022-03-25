@@ -9,7 +9,7 @@
 #include "Chunk.h"
 
 const size_t POOL_SIZE = 1024 * 1024 * 1024;  //1GB
-const size_t MAX_ORDER = 22;
+const size_t MAX_ORDER = 20;
 const size_t MAX_ALLOC = 1 << MAX_ORDER;
 const size_t N_AREA = MAX_ORDER + 1;
 

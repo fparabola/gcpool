@@ -59,7 +59,7 @@ T *FixSizePool<T>::allocone() {
         } else {
             this->freelist = nullptr;
         }
-        LOG_PRINT(LOG_ERROR, "Fix chunk found: [addr: %p], [objaddr: %p]", current, current->obj);
+        LOG_PRINT(LOG_DEBUG, "Fix chunk found: [addr: %p], [objaddr: %p]", current, current->obj);
         return pointer_cast<T*>(current->obj);
     }
     LOG_PRINT(LOG_ERROR, "Allocate fix chunk fail: no free chunk");
@@ -95,8 +95,8 @@ FixSizePool<T>::FixSizePool(size_t nchunk): nchunk(nchunk) {
     auto count = 0;
     auto current = this->freelist;
     while(current) {
-        LOG_PRINT(LOG_DEBUG, "Node(%lu): [addr: %p], [next: %p], [objaddr: %p], [tag: %p], [getchunk: %p]", ++count, current, current->next, &current->obj, current->tag,
-                  FixChunk<T>::getchunk(pointer_cast<T*>(current->obj)));
+//        LOG_PRINT(LOG_DEBUG, "Node(%lu): [addr: %p], [next: %p], [objaddr: %p], [tag: %p], [getchunk: %p]", ++count, current, current->next, &current->obj, current->tag,
+//                  FixChunk<T>::getchunk(pointer_cast<T*>(current->obj)));
         if(current->next) {
             assert(pointer_cast<char*>(current) + sizeof(T) <= pointer_cast<char*>(current+1));
             assert(FixChunk<T>::getchunk(pointer_cast<T*>(current->obj)) == current);
