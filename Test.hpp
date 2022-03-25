@@ -19,7 +19,11 @@ public:
     void testPool() {
         Pool pool;
         auto mem = pool.alloc(100);
+        auto mem1 = pool.alloc(100);
+        auto mem2 = pool.alloc(100);
         pool.free(mem);
+        pool.free(mem1);
+        pool.free(mem2);
     }
 
     void testAll() {

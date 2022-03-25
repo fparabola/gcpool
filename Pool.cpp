@@ -19,7 +19,7 @@ void* Pool::alloc(size_t bytes) {
         }
     }
     if (chunk) {
-        // split chunk, until it's order match
+        // split chunk, until it's order is matched
         if(scanorder != order) {
             auto split = [this](Chunk * chunk) -> Chunk* {
                 auto neworder = chunk->order - 1;
@@ -40,12 +40,14 @@ void* Pool::alloc(size_t bytes) {
                 // add to lower area
                 chunk->prev = nullptr;
                 chunk->next = newchunk;
-                if(!this->freearea[neworder]) {
+                newchunk->prev = chunk;
+                newchunk->next = nullptr;
+                auto head = this->freearea[neworder];
+                if(!head) {
                     this->freearea[neworder] = chunk;
                 } else {
-                    auto head = this->freearea[neworder];
                     newchunk->next = head;
-                    head->prev = chunk;
+                    head->prev = newchunk;
                     this->freearea[neworder] = chunk;
                 }
                 return chunk;
@@ -55,11 +57,12 @@ void* Pool::alloc(size_t bytes) {
             }
         }
         // to allocate this chunk, remove from freearea
-        if(chunk->next) {
-            freearea[scanorder] = chunk->next;
-            freearea[scanorder]->prev = nullptr;
+        auto head = this->freearea[order];
+        if(head->next) {
+            freearea[order] = head->next;
+            head->prev = nullptr;
         } else {
-            freearea[scanorder] = nullptr;
+            freearea[order] = nullptr;
         }
     } else {
         LOG_PRINT(LOG_ERROR, "Can not find suitable chunk to allocate");
@@ -70,15 +73,35 @@ void* Pool::alloc(size_t bytes) {
     assert(MemTag::astaginfo(chunk->mem).chunk == chunk);
     // add to usedarea
     chunk->prev = nullptr;
-    if(!this->usedarea) {
-        this->usedarea = chunk;
-        chunk->next = nullptr;
+    auto head = this->usedarea;
+    if(!head) {
+        head = chunk;
+        head->next = nullptr;
+        this->usedarea = head;
     } else {
-        chunk->next = usedarea;
-        usedarea->prev = chunk;
-        usedarea = chunk;
+        chunk->next = head;
+        head->prev = chunk;
+        this->usedarea = chunk;
     }
     chunk->inuse = true;
+#ifdef DEBUG
+    for(auto i=0; i<=MAX_ORDER; ++i) {
+        auto count = 0;
+        auto current = this->freearea[i];
+        while(current) {
+            ++count;
+            current = current->next;
+        }
+        LOG_PRINT(LOG_DEBUG, "(count) freearea[%lu]: %lu", i, count);
+    }
+    auto used = this->usedarea;
+    auto count = 0;
+    while(used) {
+        ++count;
+        used = used->next;
+    }
+    LOG_PRINT(LOG_DEBUG, "(count) userarea: %lu", count);
+#endif
     return pointer_cast<void*>(chunk->mem + sizeof(MemTag));
 }
 
@@ -175,9 +198,23 @@ Pool::Pool(): usedarea(nullptr) {
 
 #ifdef DEBUG
     LOG_PRINT(LOG_DEBUG, "*********************************************");
+    for(auto i=0; i<=MAX_ORDER; ++i) {
+        auto count = 0;
+        auto current = this->freearea[i];
+        while(current) {
+            ++count;
+            current = current->next;
+        }
+        LOG_PRINT(LOG_DEBUG, "(count) freearea[%lu]: %lu", i, count);
+    }
+    LOG_PRINT(LOG_DEBUG, "*********************************************");
     for(auto i=0; i<N_AREA; ++i) {
         auto current = this->freearea[i];
         LOG_PRINT(LOG_DEBUG, "Pool free area[%lu]:", i);
+        if(!current) {
+            LOG_PRINT(LOG_DEBUG, "empty");
+            continue;
+        }
         auto count = 0;
         while(current) {
             LOG_PRINT(LOG_DEBUG, "Node(%lu): [addr: %p], [inuse: %d], [idx: %lu], [prev: %p] [next: %p], [mem: %p], [order: %lu]", ++count, current, current->inuse, current->idx, current->prev, current->next, current->mem, current->order);
