@@ -17,24 +17,24 @@ public:
         std::vector<int> v;
         std::vector<void*> pm;
         std::vector<void*> mm;
-        for(auto i=0; i<1000; ++i) {
-            std::srand(std::time(nullptr));
-            for(auto j=0; j<500; ++j) {
-//                v.push_back(1 + std::rand() % MAX_ALLOC);
-//                v.push_back(2500);
-//                v.push_back(MAX_ALLOC / 2 - 100);
-                v.push_back(MAX_ALLOC - 100);
-            }
+        std::srand(std::time(nullptr));
+        for(auto i=0; i<1500; ++i) {
+            v.push_back(1 + std::rand() % MAX_ALLOC);
+            std::cout << v[i] << " ";
         }
+        std::cout << std::endl;
 
         Pool pool;
         auto it = v.begin();
         auto begin = std::chrono::system_clock::now();
-        auto count = 0;
         while(it != v.end()) {
             pm.push_back(pool.alloc(*it));
             it++;
-            std::cout << ++count << std::endl;
+        }
+        auto it2 = pm.begin();
+        while(it2 != pm.end()) {
+            pool.free(*it2);
+            it2++;
         }
         auto end = std::chrono::system_clock::now();
         std::cout << "Pool: \t\t" << end.time_since_epoch().count() - begin.time_since_epoch().count() << std::endl;
@@ -44,6 +44,11 @@ public:
         while(it != v.end()) {
             mm.push_back(malloc(*it));
             it++;
+        }
+        it2 = mm.begin();
+        while(it2 != mm.end()) {
+            free(*it2);
+            it2++;
         }
         end = std::chrono::system_clock::now();
         std::cout << "Malloc: \t" << end.time_since_epoch().count() - begin.time_since_epoch().count() << std::endl;

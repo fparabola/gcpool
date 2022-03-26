@@ -109,8 +109,35 @@ void Pool::free(void* mem) {
     MemTag memtag = MemTag::astaginfo(static_cast<char*>(mem) - sizeof(MemTag));
     auto chunk = memtag.chunk;
     if(chunk->inuse) {
-        auto buddy = Chunk::findbuddy(chunk);
-        while(chunk->order < MAX_ORDER && !buddy->inuse) {
+        // remove chunk from usedarea
+        if(chunk->prev && chunk->next) {
+            chunk->prev->next = chunk->next;
+        }
+        if(chunk->prev && !chunk->next) {
+            chunk->prev->next = nullptr;
+        }
+        if(!chunk->prev && chunk->next) {
+            this->usedarea = chunk->next;
+        }
+        // find buddy to be merged with
+        while(chunk->order < MAX_ORDER) {
+            auto buddy = Chunk::findbuddy(chunk);
+            if(buddy->order != chunk->order) {
+                break;
+            }
+            if(buddy->inuse) {
+                break;
+            }
+#ifdef DEBUG
+            auto minidx = std::min(chunk->idx, buddy->idx);
+            auto maxidx = std::max(chunk->idx, buddy->idx);
+            auto minmem = std::min(chunk->mem, buddy->mem);
+            auto maxmem= std::max(chunk->mem, buddy->mem);
+            auto chunksize = 1 << chunk->order;
+            assert(minmem + chunksize == maxmem);
+            assert(minidx + chunksize == maxidx);
+            assert(chunk->order == buddy->order);
+#endif
             LOG_PRINT(LOG_DEBUG, "About to merge chunk: ");
             LOG_PRINT(LOG_DEBUG, "chunk: [order:%lu], [mem:%p], [idx:%lu]", chunk->order, chunk->mem, chunk->idx);
             LOG_PRINT(LOG_DEBUG, "chunk: [order:%lu], [mem:%p], [idx:%lu]", buddy->order, buddy->mem, buddy->idx);
@@ -135,7 +162,6 @@ void Pool::free(void* mem) {
             chunk->prev = nullptr;
             chunk->next = nullptr;
             delete buddy;
-            buddy = Chunk::findbuddy(chunk);
             LOG_PRINT(LOG_DEBUG, "merged: [order:%lu], [mem:%p], [idx:%lu]", chunk->order, chunk->mem, chunk->idx);
             assert((chunk->mem - this->mem) == chunk->idx);
         }

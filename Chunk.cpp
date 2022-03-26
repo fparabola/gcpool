@@ -24,7 +24,6 @@ Chunk* Chunk::findbuddy(Chunk* chunk) {
     auto mem = chunk->mem + idx - chunk->idx;
     auto memtag = MemTag::astaginfo(mem);
     return memtag.chunk;
-//    return MemTag::astaginfo(mem - sizeof(MemTag)).chunk;
 }
 
 void *Chunk::operator new(size_t) {
