@@ -181,7 +181,14 @@ void Pool::free(void* mem) {
     }
 }
 
-Pool::Pool(): usedarea(nullptr) {
+Pool::Pool(size_t size, size_t maxorder): 
+    usedarea(nullptr),
+    POOL_SIZE(size),
+    MAX_ORDER(maxorder),
+    MAX_ALLOC(1 << MAX_ORDER),
+    N_AREA(MAX_ORDER + 1)
+{
+    freearea = (Chunk**) malloc(sizeof(Chunk*) * N_AREA);
     memset(this->freearea, 0, sizeof(Chunk*) * N_AREA);
     LOG_PRINT(LOG_DEBUG, "About to init pool: [POOL_SIZE: %lu], [MAX_ALLOC: %lu]", POOL_SIZE, MAX_ALLOC);
     if(POOL_SIZE < MAX_ALLOC) {
@@ -192,7 +199,7 @@ Pool::Pool(): usedarea(nullptr) {
         LOG_PRINT(LOG_ERROR, "Max allocating size is smaller than header tag size");
         throw -1;
     }
-    this->mem = new char[POOL_SIZE];
+    this->mem = (char*) malloc(POOL_SIZE);
     LOG_PRINT(LOG_DEBUG, "Init pool from %p to %p", mem, mem + POOL_SIZE);
 
     auto nmaxchunks = POOL_SIZE / MAX_ALLOC;
@@ -253,11 +260,16 @@ Pool::Pool(): usedarea(nullptr) {
 }
 
 Pool::~Pool() {
-    delete[] mem;
+    if (freearea) {
+        ::free(freearea);
+    }
+    if (mem) {
+        ::free(mem);
+    }
 }
 
 size_t Pool::size2order(size_t bytes) {
-    size_t hibit = std::__lg(bytes);
+    size_t hibit = std::log(bytes);
     size_t lowround = 1 << hibit;
     return lowround == bytes ? hibit : hibit + 1;
 }
@@ -267,7 +279,7 @@ size_t Pool::order2size(size_t order) {
 }
 
 size_t Pool::sizeupround(size_t bytes) {
-    size_t hibit = std::__lg(bytes);
+    size_t hibit = std::log(bytes);
     size_t lowround = 1 << hibit;
 //    LOG_PRINT(LOG_DEBUG, "%lu left lowround to %lu", bytes, lowround == bytes ? lowround : lowround << 1);
     return lowround == bytes ? lowround : lowround << 1;

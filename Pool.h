@@ -8,11 +8,6 @@
 #include "common.h"
 #include "Chunk.h"
 
-const size_t POOL_SIZE = 1024 * 1024 * 1024;  //1GB
-const size_t MAX_ORDER = 20;
-const size_t MAX_ALLOC = 1 << MAX_ORDER;
-const size_t N_AREA = MAX_ORDER + 1;
-
 class Pool {
 
     friend class Test;
@@ -23,7 +18,7 @@ public:
     void free(void*);
 
 public:
-    Pool();
+    Pool(size_t size, size_t maxorder);
     ~Pool();
 
 private:
@@ -34,7 +29,7 @@ private:
 
 private:
     Chunk* usedarea;
-    Chunk* freearea[N_AREA];
+    Chunk** freearea;
 
 private:
     char* mem;
@@ -43,6 +38,11 @@ private:
     size_t size2order(size_t);
     size_t order2size(size_t);
     size_t sizeupround(size_t);
+private:
+    size_t POOL_SIZE;
+    size_t MAX_ORDER;
+    size_t MAX_ALLOC;
+    size_t N_AREA;
 };
 
 #endif //MYPOOL_POOL_H

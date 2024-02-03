@@ -13,6 +13,8 @@ class Test {
 
 public:
 
+    size_t MAX_ALLOC = 1024 * 1024 * 1024;
+    size_t MAX_ORDER = 20;
     void testPool() {
         std::vector<int> v;
         std::vector<void*> pm;
@@ -24,7 +26,7 @@ public:
         }
         std::cout << std::endl;
 
-        Pool pool;
+        Pool pool(MAX_ALLOC, MAX_ORDER);
         auto it = v.begin();
         auto begin = std::chrono::system_clock::now();
         while(it != v.end()) {
